@@ -1,37 +1,96 @@
 package middleware
 
 import (
+	"context"
+	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwksKeyfunc jwt.Keyfunc
+
+func InitJWKS() error {
+	jwks, err := keyfunc.NewDefaultCtx(
+		context.Background(),
+		[]string{
+			"https://ratpqiulolbdaostlryi.supabase.co/auth/v1/.well-known/jwks.json",
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	jwksKeyfunc = jwks.Keyfunc
+
+	fmt.Println("JWKS loaded successfully")
+
+	return nil
+}
+
 func AuthMiddleware() gin.HandlerFunc {
-	return func (c * gin.Context)  {
+	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "no auth header"})
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "no auth header",
+			})
 			c.Abort()
-			return 
+			return
 		}
-		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
-		secret := os.Getenv("SUPABASE_JWT_SECRET")
-		token, err := jwt.Parse(tokenString, func(token*jwt.Token) (interface{}, error) {
-			return []byte(secret), nil
-		})
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-			c.Abort()
-			return 
-		}
-		claims := token.Claims.(jwt.MapClaims)
 
-		userID := claims["sub"]
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		token, err := jwt.Parse(
+			tokenString,
+			jwksKeyfunc,
+		)
+
+		if err != nil {
+			fmt.Println("JWT ERROR:", err)
+
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": err.Error(),
+			})
+			c.Abort()
+			return
+		}
+
+		if !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "token not valid",
+			})
+			c.Abort()
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid claims",
+			})
+			c.Abort()
+			return
+		}
+
+		fmt.Println("CLAIMS:", claims)
+
+		userID, ok := claims["sub"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "missing user id",
+			})
+			c.Abort()
+			return
+		}
+
 		c.Set("user_id", userID)
-		c.Next()
 
+		c.Next()
 	}
 }
