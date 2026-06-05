@@ -19,6 +19,6 @@ func SetupRoutes(r *gin.Engine) {
 	api.POST("/families", handlers.CreateFamily)
 	api.GET("/families/me", handlers.GetMyFamily)
 	api.GET("/families/:id/members", handlers.GetFamilyMember)
-	api.POST("/families/:id/invite")
+	api.POST("/families/:id/invite", handlers.InviteMember)
 	api.GET("/invitations", handlers.GetInvitations)
 }

@@ -154,7 +154,7 @@ func GetFamilyMember (c *gin.Context) {
 	})
 }
 
-func InviteMmber (c *gin.Context) {
+func InviteMember (c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	familyID := c.Param("id")
 
