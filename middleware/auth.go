@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -27,7 +26,6 @@ func InitJWKS() error {
 
 	jwksKeyfunc = jwks.Keyfunc
 
-	fmt.Println("JWKS loaded successfully")
 
 	return nil
 }
@@ -52,7 +50,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		)
 
 		if err != nil {
-			fmt.Println("JWT ERROR:", err)
 
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": err.Error(),
@@ -78,7 +75,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println("CLAIMS:", claims)
+
 
 		userID, ok := claims["sub"].(string)
 		if !ok {

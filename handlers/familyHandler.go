@@ -104,6 +104,7 @@ func GetMyFamily (c *gin.Context) {
 func GetFamilyMember (c *gin.Context) {
 	familyID := c.Param("id")
 
+
 	rows, err := config.DB.Query(
 		context.Background(),
 		`
@@ -122,11 +123,11 @@ func GetFamilyMember (c *gin.Context) {
 		return
 	}
 	defer rows.Close()
-	var members []gin.H
+	members := []gin.H{}
 
 	for rows.Next() { 
 		var id string
-		var name string
+		var name *string
 		var email string
 		var role string
 
@@ -140,6 +141,7 @@ func GetFamilyMember (c *gin.Context) {
 		if err != nil {
 			continue
 		}
+
 
 		members = append(members, gin.H{
 			"id": id,
@@ -158,8 +160,9 @@ func InviteMember (c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	familyID := c.Param("id")
 
+
 	var input struct {
-		Email string `json:"email" binding:"required, email"`
+		Email string `json:"email" binding:"required,email"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -179,6 +182,8 @@ func InviteMember (c *gin.Context) {
 		familyID,
 		userID,
 	).Scan(&role)
+
+
 
 	if err != nil || role != "owner"{
 		c.JSON(403, gin.H{
