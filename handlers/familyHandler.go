@@ -257,3 +257,100 @@ func GetInvitations (c *gin.Context) {
 		"invitations": invitations,
 	})
 }
+
+func AcceptInvitations (c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	invitationID := c.Param("id")
+
+	var familyID string 
+	var status string
+
+	err := config.DB.QueryRow(
+		context.Background(),
+		`
+			select family_id, status
+			from invitations
+			where id = $1 
+		`,
+		invitationID,
+	).Scan(
+		&familyID,
+		&status,
+	)
+
+	if err != nil {
+		c.JSON(404, gin.H{
+			"error": "invitation not found",
+		})
+		return
+	}
+
+	if status != "pending" {
+		c.JSON(400, gin.H{
+			"error": "invitation already processed",
+		})
+		return
+	}
+	_, err = config.DB.Exec(
+		context.Background(),
+		`
+			insert into family_members (family_id, user_id, role)
+			values ($1, $2, 'member')
+		`,
+		familyID,
+		userID,
+	)
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	_, err = config.DB.Exec(
+		context.Background(),
+		`
+			update invitations
+			set status = 'accepted'
+			where id = $1
+		`,
+		invitationID,
+	)
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "invitation accepted",
+	})
+}
+
+func RejectInvitation(c *gin.Context) {
+	invitationID := c.Param("id")
+
+	_, err := config.DB.Exec(
+		context.Background(),
+		`
+			update invitations
+			set status = 'rejected'
+			where id = $1
+			and status = 'pending'
+		`,
+		invitationID,
+	)
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error" : err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "invitation rejected",
+	})
+}
