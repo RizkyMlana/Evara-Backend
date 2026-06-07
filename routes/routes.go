@@ -11,9 +11,6 @@ func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware())
 
-	api.POST("/transactions", handlers.CreateTransaction)
-	api.GET("/transactions", handlers.GetTransactions)
-
 	api.GET("/me", handlers.Me)
 
 	api.POST("/families", handlers.CreateFamily)
