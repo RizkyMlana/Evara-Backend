@@ -12,7 +12,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func main() { 
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -25,6 +25,7 @@ func main() {
 	config.ConnectDB()
 	port := os.Getenv("PORT")
 	r := gin.Default()
+	r.SetTrustedProxies([]string{"192.168.1.2"})
 	routes.SetupRoutes(r)
 	log.Println("Server running on port", port)
 	r.Run(":" + port)
