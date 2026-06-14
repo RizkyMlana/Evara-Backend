@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"logqian-backend/config"
-	"logqian-backend/middleware"
-	"logqian-backend/routes"
+	"evara-backend/config"
+	"evara-backend/middleware"
+	"evara-backend/routes"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
