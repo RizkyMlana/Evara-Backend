@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"logqian-backend/handlers"
-	"logqian-backend/middleware"
+	"evara-backend/handlers"
+	"evara-backend/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +18,8 @@ func SetupRoutes(r *gin.Engine) {
 	api.GET("/families/:id/members", handlers.GetFamilyMember)
 	api.POST("/families/:id/invite", handlers.InviteMember)
 	api.GET("/invitations", handlers.GetInvitations)
-	api.POST("invitations/:id/accept", handlers.AcceptInvitations)
-	api.POST("invitations/:id/reject", handlers.RejectInvitation)
+	api.POST("/invitations/:id/accept", handlers.AcceptInvitations)
+	api.POST("/invitations/:id/reject", handlers.RejectInvitation)
 
+	api.POST("/transaction", handlers.CreateTransaction)
 }

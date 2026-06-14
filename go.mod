@@ -1,4 +1,4 @@
-module logqian-backend
+module evara-backend
 
 go 1.26.3
 

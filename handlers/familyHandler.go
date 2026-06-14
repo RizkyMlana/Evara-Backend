@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"logqian-backend/config"
-	"logqian-backend/models"
+	"evara-backend/config"
+	"evara-backend/models"
 
 	"github.com/gin-gonic/gin"
 )
