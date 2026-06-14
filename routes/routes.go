@@ -22,4 +22,5 @@ func SetupRoutes(r *gin.Engine) {
 	api.POST("/invitations/:id/reject", handlers.RejectInvitation)
 
 	api.POST("/transaction", handlers.CreateTransaction)
+	api.GET("/transaction", handlers.GetTransactions)
 }
