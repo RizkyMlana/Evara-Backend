@@ -23,4 +23,7 @@ func SetupRoutes(r *gin.Engine) {
 
 	api.POST("/transaction", handlers.CreateTransaction)
 	api.GET("/transaction", handlers.GetTransactions)
+	api.DELETE("/transaction", handlers.DeleteTransactions)
+
+	api.GET("/dashboard", handlers.GetDashboard)
 }

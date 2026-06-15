@@ -206,3 +206,52 @@ func GetTransactions(c *gin.Context) {
 }
 
 
+func DeleteTransactions(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	transactionID := c.Param("id")
+
+	var creatorID string
+
+	err := config.DB.QueryRow(
+		context.Background(),
+		`
+			select user_id
+			from transactions
+			where id = $1
+		`,
+		transactionID,
+	).Scan(&creatorID)
+
+	if err != nil {
+		c.JSON(404, gin.H{
+			"error": "transaction not found",
+		})
+		return
+	}
+
+	if creatorID != userID {
+		c.JSON(403, gin.H{
+			"error": "you can only delete your own transaction",
+		})
+		return
+	}
+
+	_, err = config.DB.Exec(
+		context.Background(),
+		`
+			delete from transactions
+			where id = $1
+		`,
+		transactionID,
+	)
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "transaction deleted",
+	})
+}
