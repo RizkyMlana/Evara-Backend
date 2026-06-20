@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -16,7 +17,7 @@ func InitJWKS() error {
 	jwks, err := keyfunc.NewDefaultCtx(
 		context.Background(),
 		[]string{
-			"https://ratpqiulolbdaostlryi.supabase.co/auth/v1/.well-known/jwks.json",
+			os.Getenv("SUPABASE_JWT"),
 		},
 	)
 
