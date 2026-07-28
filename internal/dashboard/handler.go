@@ -1,8 +1,8 @@
-package handlers
+package dashboard
 
 import (
 	"context"
-	"evara-backend/config"
+	"evara-backend/internal/config"
 
 	"github.com/gin-gonic/gin"
 )
