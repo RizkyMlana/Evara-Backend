@@ -1,11 +1,10 @@
-package handlers
+package family
 
 import (
 	"context"
 	"net/http"
 
-	"evara-backend/config"
-	"evara-backend/models"
+	"evara-backend/internal/config"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +12,7 @@ import (
 func CreateFamily (c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
-	var input models.CreateFamilyRequest
+	var input CreateFamilyRequest
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -234,10 +233,10 @@ func GetInvitations (c *gin.Context) {
 	}
 
 	defer rows.Close()
-	var invitations []models.InvitationResponse
+	var invitations []InvitationResponse
 
 	for rows.Next() {
-		var invite models.InvitationResponse
+		var invite InvitationResponse
 
 		err := rows.Scan(
 			&invite.ID,
