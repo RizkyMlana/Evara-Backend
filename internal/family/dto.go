@@ -8,10 +8,6 @@ type CreateFamilyResponse struct {
 	ID string `json:"id"`
 }
 
-type InviteMemberRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
 type GetMyFamilyResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -23,6 +19,10 @@ type FamilyMemberResponse struct {
 	Name  *string `json:"name"`
 	Email string  `json:"email"`
 	Role  string  `json:"role"`
+}
+
+type InviteMemberRequest struct {
+	Email string `json:"email" binding:"required,email"`
 }
 
 type InvitationResponse struct {

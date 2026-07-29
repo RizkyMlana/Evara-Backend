@@ -2,102 +2,80 @@ package family
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"evara-backend/internal/config"
+	"evara-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
 
-func CreateFamily (c *gin.Context) {
-	userID, _ := c.Get("user_id")
-
-	var input CreateFamilyRequest
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-
-		})
-		return
-	}
-
-	var familyID string
-
-	err := config.DB.QueryRow(
-		context.Background(),
-		`
-			insert into families (name, created_by)
-			values ($1, $2) returning id
-		`,
-		input.Name,
-		userID,
-	).Scan(&familyID)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error" : err.Error(),
-		})
-		return
-	}
-
-	_, err = config.DB.Exec(
-		context.Background(),
-		`insert into family_members (family_id, user_id, role)
-		 values ($1, $2, 'owner')
-		`,
-		familyID,
-		userID,
-	)
-
-	if err != nil{
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error" : err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"message" : "familty created",
-		"family_id" : familyID,
-	})
+type Handler struct {
+	service Service
 }
 
-func GetMyFamily (c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	
-	var familyID string
-	var familyName string
-	var role string
+func NewHandler(
+	service Service,
+) *Handler {
 
-	err := config.DB.QueryRow(
-		context.Background(),
-		`
-			select f.id, f.name, fm.role
-			from family_members fm
-			join families f on f.id = fm.family_id
-			where fm.user_id = $1
-			limit 1
-		`,
-		userID,
-	).Scan(
-		&familyID,
-		&familyName,
-		&role,
-	)
+	return &Handler{
+		service: service,
+	}
+}
 
-	if err != nil {
-		c.JSON(404, gin.H{
-			"error": "family not found",
-		})
+func (h *Handler) CreateFamily(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+
+	var req CreateFamilyRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Validation(c, err.Error())
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"id": familyID,
-		"name" : familyName,
-		"role" : role,
-	})
+	id, err := h.service.Create(
+		c.Request.Context(),
+		userID,
+		req,
+	)
+
+	if err != nil {
+		response.Internal(c, err.Error())
+		return
+	}
+
+	response.Created(
+		c,
+		"Family created successfully",
+		CreateFamilyResponse{
+			ID: id,
+		},
+	)
+}
+
+func (h *Handler) GetMyFamily(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	family, err := h.service.GetMyFamily(
+		c.Request.Context(),
+		userID,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrFamilyNotFound):
+			response.NotFound(c, err.Error())
+		default:
+			response.Internal(c, "Internal server error")
+		}
+		return
+	}
+
+	response.OK(
+		c,
+		"Family retrieved successfully",
+		family,
+	)
 }
 
 func GetFamilyMember (c *gin.Context) {
@@ -352,4 +330,26 @@ func RejectInvitation(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "invitation rejected",
 	})
+}
+
+func (h *Handler) GetFamilyMember(c *gin.Context) {
+	familyID := c.Param("id")
+	members, err := h.service.GetMembers(
+		c.Request.Context(),
+		familyID,
+	)
+
+	if err != nil {
+		response.Internal(
+			c,
+			"Internal server error",
+		)
+		return
+	}
+
+	response.OK(
+		c,
+		"Family members retrieved successfully",
+		members,
+	)
 }
