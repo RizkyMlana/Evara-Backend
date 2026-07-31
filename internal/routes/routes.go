@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"evara-backend/internal/family"
 	"evara-backend/internal/middleware"
 	"evara-backend/internal/transaction"
 
@@ -11,6 +12,7 @@ import (
 func SetupRoutes(
 	r *gin.Engine,
 	transactionHandler *transaction.Handler,
+	familyHandler *family.Handler,
 	) {
 
 		api := r.Group("/api")

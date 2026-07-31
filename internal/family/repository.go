@@ -3,7 +3,7 @@ package family
 import (
 	"context"
 
-	"evara-backend/internal/config"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repository interface {
@@ -77,10 +77,16 @@ type Repository interface {
 
 }
 
-type repository struct{}
+type repository struct{
+	db *pgxpool.Pool
+}
 
-func NewRepository() Repository {
-	return &repository{}
+func NewRepository(
+	db *pgxpool.Pool,
+) Repository {
+	return &repository{
+		db: db,
+	}
 }
 
 func (r *repository) Create(
@@ -91,7 +97,7 @@ func (r *repository) Create(
 
 	var familyID string
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 		INSERT INTO families (name, created_by)
@@ -115,7 +121,7 @@ func (r *repository) AddOwner(
 	userID string,
 ) error {
 
-	_, err := config.DB.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		`
 		INSERT INTO family_members (
@@ -138,7 +144,7 @@ func (r *repository) GetMyFamily(
 ) (*GetMyFamilyResponse, error) {
 	var family GetMyFamilyResponse
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 			select f.id, f.name, fm.role
@@ -165,7 +171,7 @@ func (r *repository) GetMembers(
 	ctx context.Context,
 	familyID string,
 )([]FamilyMemberResponse, error){
-	rows, err := config.DB.Query(
+	rows, err := r.db.Query(
 		ctx,
 		`
 			select p.id, p.name, p.email, fm.role
@@ -213,7 +219,7 @@ func (r *repository)GetRole(
 ) (string, error) {
 	var role string
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 			select role
@@ -239,7 +245,7 @@ func (r * repository) InvitationExists(
 ) (bool, error) {
 	var exists bool
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 			select exists(
@@ -263,7 +269,7 @@ func (r *repository) CreateInvitation(
 	email string,
 	userID string,
 ) error {
-	_, err := config.DB.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		`
 			insert into invitations(
@@ -284,7 +290,7 @@ func (r *repository)GetInvitations(
 	ctx context.Context,
 	userID string,
 )([]InvitationResponse, error) {
-	rows, err := config.DB.Query(
+	rows, err := r.db.Query(
 		ctx,
 		`
 			select i.id, i.family_id, f.name, i.status
@@ -333,7 +339,7 @@ func (r *repository)GetInvitation(
 )(*Invitation, error) {
 	var invitation Invitation
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 			select id, family_id, email, invited_by, status
@@ -361,7 +367,7 @@ func (r *repository) AddMember (
 	familyID string,
 	userID string,
 ) error {
-	_, err := config.DB.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		`
 			insert into family_members(family_id, user_id, role)
@@ -378,7 +384,7 @@ func (r *repository) UpdateInvitationStatus(
 	id string,
 	status string,
 ) error {
-	_, err := config.DB.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		`
 			update invitations
@@ -396,7 +402,7 @@ func (r *repository)RejectInvitation(
 	id string,
 ) error {
 
-	_, err := config.DB.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		`
 			update invitations

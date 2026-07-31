@@ -3,25 +3,61 @@ package transaction
 import (
 	"context"
 	"errors"
-	"evara-backend/internal/config"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Repository struct{}
 
-func NewRepository() *Repository {
-	return &Repository{}
+type Repository interface {
+	Create(
+		ctx context.Context,
+		tx Transaction,
+	) (string, error)
+
+	IsFamilyMember(
+		ctx context.Context,
+		familyID string,
+		userID string,
+	) (bool, error)
+
+	GetTransactions(
+		ctx context.Context,
+		familyID string,
+	) ([]GetTransactionsResponse, error)
+
+	GetByID(
+		ctx context.Context,
+		id string,
+	) (*Transaction, error)
+
+	Delete(
+		ctx context.Context,
+		id string,
+	) error
 }
 
-func (r *Repository) Create(
+type repository struct{
+	db *pgxpool.Pool
+}
+
+func NewRepository(
+	db *pgxpool.Pool,
+) Repository {
+	
+	return &repository{
+		db: db,
+	}
+}
+
+func (r *repository) Create(
 	ctx context.Context,
 	tx Transaction,
 ) (string, error) {
 
 	var id string
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 		insert into transactions (
@@ -50,13 +86,13 @@ func (r *Repository) Create(
 	return id, nil
 }
 
-func (r *Repository) isFamilyMember(
+func (r *repository) IsFamilyMember(
 	ctx context.Context,
 	familyID string,
 	userID string,
 ) (bool,error) {
 	var exists bool
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`select exists (
 			select 1
@@ -75,11 +111,11 @@ func (r *Repository) isFamilyMember(
 	return  exists, nil
 }
 
-func (r *Repository) GetTransactions(
+func (r *repository) GetTransactions(
 	ctx context.Context,
 	familyID string,
 ) ([]GetTransactionsResponse, error) {
-	rows, err := config.DB.Query(
+	rows, err := r.db.Query(
 		ctx,
 		`
 			select
@@ -128,13 +164,13 @@ func (r *Repository) GetTransactions(
 	return transactions, nil
 }
 
-func (r *Repository) GetByID(
+func (r *repository) GetByID(
 	ctx context.Context,
 	id string,
 ) (*Transaction, error) {
 	var tx Transaction
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 		select id, family_id, user_id, type, title, description, amount, created_at
@@ -161,11 +197,11 @@ func (r *Repository) GetByID(
 	return  &tx, nil
 }
 
-func (r *Repository) Delete(
+func (r *repository) Delete(
 	ctx context.Context,
 	id string,
 ) error {
-	_, err := config.DB.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		`
 			delete from transactions

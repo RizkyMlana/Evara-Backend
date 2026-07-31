@@ -5,11 +5,11 @@ import (
 )
 
 type Service struct {
-	repository *Repository
+	repository Repository
 }
 
 func NewService(
-	repository *Repository,
+	repository Repository,
 ) *Service {
 
 	return &Service{
@@ -32,7 +32,7 @@ func (s *Service) Create(
 			return "", ErrInvalidTransactionType
 	}
 
-	isMember, err := s.repository.isFamilyMember(
+	isMember, err := s.repository.IsFamilyMember(
 		ctx,
 		req.FamilyID,
 		userID,
@@ -66,7 +66,7 @@ func (s *Service) GetTransactions(
 	userID string,
 	familyID string,
 ) ([]GetTransactionsResponse, error) {
-	isMember, err := s.repository.isFamilyMember(
+	isMember, err := s.repository.IsFamilyMember(
 		ctx,
 		familyID,
 		userID,

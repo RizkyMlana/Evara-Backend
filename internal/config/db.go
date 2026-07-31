@@ -2,27 +2,23 @@ package config
 
 import (
 	"context"
+	"os"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DBTX interface {
-	Exec(
-		ctx context.Context,
-		sql string,
-		arguments ...any,
-	) (pgconn.CommandTag, error)
+func NewDatabase() (*pgxpool.Pool, error) {
 
-	Query(
-		ctx context.Context,
-		sql string,
-		args ...any,
-	) (pgx.Rows, error)
+	dsn := os.Getenv("DATABASE_URL")
 
-	QueryRow(
-		ctx context.Context,
-		sql string,
-		args ...any,
-	) pgx.Row
+	db, err := pgxpool.New(
+		context.Background(),
+		dsn,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
