@@ -7,9 +7,6 @@ import (
 )
 
 func NewDatabase(cfg DatabaseConfig) (*pgxpool.Pool, error) {
-
-	
-
 	db, err := pgxpool.New(
 		context.Background(),
 		cfg.URL,
