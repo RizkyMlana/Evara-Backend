@@ -1,62 +1,41 @@
 package app
 
 import (
-	"net/http"
-	"os"
-
 	"evara-backend/internal/config"
-	"evara-backend/internal/family"
-	"evara-backend/internal/routes"
-	"evara-backend/internal/transaction"
-
-	"github.com/gin-gonic/gin"
+	"evara-backend/internal/middleware"
 )
 
-type App struct{
-	router *gin.Engine
-	server *http.Server
+type App struct {
+	server *Server
 }
 
 func New() (*App, error) {
-	db, err := config.NewDatabase()
+
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+	}
+	if err := middleware.InitJWKS(cfg.JWT); err != nil{
+		return nil, err
+	}
+	
+	db, err := config.NewDatabase(cfg.Database)
+	
 	if err != nil {
 		return nil, err
 	}
 
-	// transaction
-	transactionRepository := transaction.NewRepository(db)
-	transactionService := transaction.NewService(transactionRepository)
-	transactionHandler := transaction.NewHandler(transactionService)
+	providers := NewProviders(db)
 
-	// family
-	familyRepository := family.NewRepository(db)
-	familyService := family.NewService(familyRepository)
-	familyHandler := family.NewHandler(familyService)
+	router := NewRouter(providers)
 
-	router := gin.Default()
-
-
-	router.SetTrustedProxies(
-		[]string{"192.168.1.2"},
-	)
-
-	routes.SetupRoutes(
-		router,
-		transactionHandler,
-		familyHandler,
-	)
-
-	server := &http.Server{
-		Addr: ":" + os.Getenv("PORT"),
-		Handler: router,
-	}
+	server := NewServer(cfg.Server, router)
 
 	return &App{
-		router: router,
 		server: server,
 	}, nil
 }
 
 func (a *App) Run() error {
-	return a.server.ListenAndServe()
+	return a.server.Run()
 }

@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
+	"evara-backend/internal/config"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -13,11 +13,11 @@ import (
 
 var jwksKeyfunc jwt.Keyfunc
 
-func InitJWKS() error {
+func InitJWKS(cfg config.JWTConfig) error {
 	jwks, err := keyfunc.NewDefaultCtx(
 		context.Background(),
 		[]string{
-			os.Getenv("SUPABASE_JWT"),
+			cfg.URL,
 		},
 	)
 

@@ -2,18 +2,17 @@ package config
 
 import (
 	"context"
-	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewDatabase() (*pgxpool.Pool, error) {
+func NewDatabase(cfg DatabaseConfig) (*pgxpool.Pool, error) {
 
-	dsn := os.Getenv("DATABASE_URL")
+	
 
 	db, err := pgxpool.New(
 		context.Background(),
-		dsn,
+		cfg.URL,
 	)
 
 	if err != nil {
