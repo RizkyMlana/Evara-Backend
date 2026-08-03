@@ -1,7 +1,9 @@
 package app
 
 import (
+	"errors"
 	"evara-backend/internal/config"
+	"evara-backend/pkg/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +27,26 @@ func NewServer(
 }
 
 func (s *Server) Run() error {
-	return s.http.ListenAndServe()
+	logger.Log.Info(
+		"starting HTTP server",
+		"address",
+		s.http.Addr,
+	)
+
+	err := s.http.ListenAndServe()
+	if err != nil &&
+	!errors.Is(err, http.ErrServerClosed) {
+		logger.Log.Error(
+			"http server stopped",
+			"error",
+			err,
+		)
+
+		return err
+	}
+	logger.Log.Info(
+		"http server stopped",
+	)
+	return nil
 }
 

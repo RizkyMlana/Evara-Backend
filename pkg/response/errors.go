@@ -26,30 +26,30 @@ func Error(
 	})
 }
 
-func BadRequest(c *gin.Context, message string) {
-	Error(c, http.StatusBadRequest, CodeBadRequest, message)
+func BadRequest(c *gin.Context, err string) {
+	Error(c, http.StatusBadRequest, CodeBadRequest, err)
 }
 
-func Unauthorized(c *gin.Context, message string) {
-	Error(c, http.StatusUnauthorized, CodeUnauthorized, message)
+func Unauthorized(c *gin.Context, err string) {
+	Error(c, http.StatusUnauthorized, CodeUnauthorized, err)
 }
 
-func Forbidden(c *gin.Context, message string) {
-	Error(c, http.StatusForbidden, CodeForbidden, message)
+func Forbidden(c *gin.Context, err string) {
+	Error(c, http.StatusForbidden, CodeForbidden, err)
 }
 
-func NotFound(c *gin.Context, message string) {
-	Error(c, http.StatusNotFound, CodeNotFound, message)
+func NotFound(c *gin.Context, err string) {
+	Error(c, http.StatusNotFound, CodeNotFound, err)
 }
 
-func Conflict(c *gin.Context, message string) {
-	Error(c, http.StatusConflict, CodeConflict, message)
+func Conflict(c *gin.Context, err string) {
+	Error(c, http.StatusConflict, CodeConflict, err)
 }
 
-func Validation(c *gin.Context, message string) {
-	Error(c, http.StatusBadRequest, CodeValidation, message)
+func Validation(c *gin.Context, err string) {
+	Error(c, http.StatusBadRequest, CodeValidation, err)
 }
 
-func Internal(c *gin.Context, message string) {
-	Error(c, http.StatusInternalServerError, CodeInternal, message)
+func Internal(c *gin.Context, err string) {
+	Error(c, http.StatusInternalServerError, CodeInternal, err)
 }

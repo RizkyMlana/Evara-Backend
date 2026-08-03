@@ -1,22 +1,15 @@
 package transaction
 
+import "time"
+
 type CreateTransactionRequest struct {
-	FamilyID    string  `json:"family_id" binding:"required"`
-	Type        string  `json:"type" binding:"required"`
-	Title       string  `json:"title" binding:"required"`
+	FamilyID    string  `json:"family_id" validate:"required,uuid"`
+	Type        string  `json:"type" validate:"required,oneof=income expense"`
+	Title       string  `json:"title" validate:"required"`
 	Description string  `json:"description"`
-	Amount      float64 `json:"amount" binding:"required"`
+	Amount      float64 `json:"amount" validate:"gt=0"`
 }
 
-type TransactionResponse struct {
-	ID          string  `json:"id"`
-	UserName    string  `json:"user_name"`
-	Type        string  `json:"type"`
-	Title       string  `json:"title"`
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
-	CreatedAt   string  `json:"created_at"`
-}
 
 type CreateTransactionResponse struct {
 	ID string `json:"id"`
@@ -29,5 +22,5 @@ type GetTransactionsResponse struct {
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Amount float64 `json:"amount"`
-	CreatedAt string `json:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
 }

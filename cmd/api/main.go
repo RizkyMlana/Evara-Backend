@@ -2,6 +2,7 @@ package main
 
 import (
 	"evara-backend/internal/app"
+	"evara-backend/pkg/logger"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -11,6 +12,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
+	logger.Init()
 	app, err := app.New()
 	
 	if err != nil {

@@ -21,6 +21,11 @@ func NewRouter(
 		middleware.AuthMiddleware(),
 	)
 
+
+	api.GET(
+		"/me",
+		p.UserHandler.Me,
+	)
 	api.POST(
 		"/families",
 		p.FamilyHandler.CreateFamily,
@@ -66,6 +71,11 @@ func NewRouter(
 	api.DELETE(
 		"/transaction/:id",
 		p.TransactionHandler.DeleteTransaction,
+	)
+
+	api.GET(
+		"/dashboard",
+		p.DashboardHandler.GetDashboard,
 	)
 	return r
 	
