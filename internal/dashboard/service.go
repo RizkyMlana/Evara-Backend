@@ -1,6 +1,8 @@
 package dashboard
 
-import "context"
+import (
+	"context"
+)
 
 type Service interface {
 	GetDashboard(

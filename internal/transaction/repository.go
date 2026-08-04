@@ -3,6 +3,8 @@ package transaction
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -54,7 +56,8 @@ func (r *repository) Create(
 	ctx context.Context,
 	tx Transaction,
 ) (string, error) {
-
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var id string
 
 	err := r.db.QueryRow(
@@ -80,7 +83,7 @@ func (r *repository) Create(
 	).Scan(&id)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("create transaction: %w", err)
 	}
 
 	return id, nil
@@ -91,6 +94,8 @@ func (r *repository) IsFamilyMember(
 	familyID string,
 	userID string,
 ) (bool,error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var exists bool
 	err := r.db.QueryRow(
 		ctx,
@@ -105,7 +110,7 @@ func (r *repository) IsFamilyMember(
 	).Scan(&exists)
 
 	if err != nil {
-		return  false, err
+		return  false, fmt.Errorf("check family member: %w", err)
 	}
 
 	return  exists, nil
@@ -115,12 +120,14 @@ func (r *repository) GetTransactions(
 	ctx context.Context,
 	familyID string,
 ) ([]GetTransactionsResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	rows, err := r.db.Query(
 		ctx,
 		`
 			select
 				t.id,
-				COALESCE(p.name, '')
+				COALESCE(p.name, ''),
 				t.type,
 				t.title,
 				t.description,
@@ -135,7 +142,7 @@ func (r *repository) GetTransactions(
 	)
 
 	if err != nil {
-		return  nil, err
+		return  nil, fmt.Errorf("query transactions: %w", err)
 	}
 
 	defer rows.Close()
@@ -156,11 +163,15 @@ func (r *repository) GetTransactions(
 		)
 
 		if err != nil {
-			return  nil, err
+			return  nil, fmt.Errorf("scan transaction: %w", err)
 		}
 
 		transactions = append(transactions, tx)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate transactions: %w", err)
+	}
+
 	return transactions, nil
 }
 
@@ -168,6 +179,8 @@ func (r *repository) GetByID(
 	ctx context.Context,
 	id string,
 ) (*Transaction, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var tx Transaction
 
 	err := r.db.QueryRow(
@@ -192,6 +205,7 @@ func (r *repository) GetByID(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return  nil, ErrTransactionNotFound
 		}
+		return nil, fmt.Errorf("get transaction by id: %w", err)
 	}
 
 	return  &tx, nil
@@ -201,6 +215,8 @@ func (r *repository) Delete(
 	ctx context.Context,
 	id string,
 ) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	_, err := r.db.Exec(
 		ctx,
 		`
@@ -209,5 +225,9 @@ func (r *repository) Delete(
 		`,
 		id,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("delete transaction: %w", err)
+	}
+
+	return nil
 }

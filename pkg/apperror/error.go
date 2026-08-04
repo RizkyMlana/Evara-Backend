@@ -1,11 +1,14 @@
 package apperror
 
-import "net/http"
+import (
+	"evara-backend/pkg/response"
+	"net/http"
+)
 
 type Error struct {
+	HTTPStatus int
 	Code       string
 	Message    string
-	HTTPStatus int
 }
 
 func (e *Error) Error() string {
@@ -14,7 +17,7 @@ func (e *Error) Error() string {
 
 func BadRequest(message string) error {
 	return &Error{
-		Code:       "BAD_REQUEST",
+		Code:       response.CodeBadRequest,
 		Message:    message,
 		HTTPStatus: http.StatusBadRequest,
 	}
@@ -22,7 +25,7 @@ func BadRequest(message string) error {
 
 func Validation(message string) error {
 	return &Error{
-		Code:       "VALIDATION_ERROR",
+		Code:       response.CodeValidation,
 		Message:    message,
 		HTTPStatus: http.StatusBadRequest,
 	}
@@ -30,7 +33,7 @@ func Validation(message string) error {
 
 func Unauthorized(message string) error {
 	return &Error{
-		Code:       "UNAUTHORIZED",
+		Code:       response.CodeUnauthorized,
 		Message:    message,
 		HTTPStatus: http.StatusUnauthorized,
 	}
@@ -38,7 +41,7 @@ func Unauthorized(message string) error {
 
 func Forbidden(message string) error {
 	return &Error{
-		Code:       "FORBIDDEN",
+		Code:       response.CodeForbidden,
 		Message:    message,
 		HTTPStatus: http.StatusForbidden,
 	}
@@ -46,7 +49,7 @@ func Forbidden(message string) error {
 
 func NotFound(message string) error {
 	return &Error{
-		Code:       "NOT_FOUND",
+		Code:       response.CodeNotFound,
 		Message:    message,
 		HTTPStatus: http.StatusNotFound,
 	}
@@ -54,7 +57,7 @@ func NotFound(message string) error {
 
 func Conflict(message string) error {
 	return &Error{
-		Code:       "CONFLICT",
+		Code:       response.CodeConflict,
 		Message:    message,
 		HTTPStatus: http.StatusConflict,
 	}
@@ -62,8 +65,8 @@ func Conflict(message string) error {
 
 func Internal(message string) error {
 	return &Error{
-		Code:       "INTERNAL_SERVER_ERROR",
-		Message:    message,
+		Code:       response.CodeInternal,
+		Message:    "Internal server error",
 		HTTPStatus: http.StatusInternalServerError,
 	}
 }

@@ -1,7 +1,7 @@
 package family
 
 type CreateFamilyRequest struct {
-	Name string `json:"name" binding:"required"`
+	Name string `json:"name" validate:"required,min=3,max=50"`
 }
 
 type CreateFamilyResponse struct {
@@ -22,7 +22,7 @@ type FamilyMemberResponse struct {
 }
 
 type InviteMemberRequest struct {
-	Email string `json:"email" binding:"required,email"`
+	Email string `json:"email" validate:"required,email"`
 }
 
 type InvitationResponse struct {

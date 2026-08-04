@@ -16,8 +16,13 @@ func Validate(v any) error {
 	}
 
 	var messages []string
+	var validationErrors validator.ValidationErrors
 
-	for _, e := range err.(validator.ValidationErrors) {
+	if !errors.As(err, &validationErrors){
+		return err
+	}
+
+	for _, e := range validationErrors {
 		switch e.Tag(){
 			case "required":
 				messages = append(messages, 
@@ -34,6 +39,15 @@ func Validate(v any) error {
 			case "oneof":
 				messages = append(messages, 
 				e.Field()+" must be one of: "+e.Param())
+			case "min":
+				messages = append(messages, 
+				e.Field()+" must be at least"+e.Param()+" characters")
+			case "max":
+				messages = append(messages, 
+				e.Field()+" must not exceed"+e.Param()+" characters")
+				case "uiid":
+					messages = append(messages, 
+					e.Field()+" must be a valid UUID")
 			default:
 				messages = append(messages, 
 				e.Error())

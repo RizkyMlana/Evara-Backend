@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"evara-backend/pkg/response"
+	"evara-backend/pkg/validator"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,7 @@ func (h *Handler) CreateFamily(c *gin.Context) {
 
 	var req CreateFamilyRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := validator.Bind(c, &req); err != nil {
 		response.Validation(c, err.Error())
 		return
 	}
@@ -99,7 +100,7 @@ func (h *Handler)InviteMember(c *gin.Context) {
 
 	var req InviteMemberRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := validator.Bind(c, &req); err != nil {
 		response.Validation(c, err.Error())
 		return
 	}
