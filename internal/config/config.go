@@ -33,7 +33,7 @@ func Load() (*Config, error) {
 		},
 
 		JWT: JWTConfig{
-			URL: getEnv("SUPABASE_JWKS_URL"),
+			URL: getEnv("SUPABASE_JWT"),
 		},
 	}
 	return cfg, nil
