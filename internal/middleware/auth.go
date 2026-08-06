@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"net/http"
-	"os"
+	"evara-backend/internal/config"
+	"evara-backend/pkg/response"
 	"strings"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -13,11 +13,11 @@ import (
 
 var jwksKeyfunc jwt.Keyfunc
 
-func InitJWKS() error {
+func InitJWKS(cfg config.JWTConfig) error {
 	jwks, err := keyfunc.NewDefaultCtx(
 		context.Background(),
 		[]string{
-			os.Getenv("SUPABASE_JWT"),
+			cfg.URL,
 		},
 	)
 
@@ -30,17 +30,18 @@ func InitJWKS() error {
 
 	return nil
 }
-
+func unauthorized(c *gin.Context) {
+				response.Unauthorized(c, "invalid access token")
+				c.Abort()
+		}
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		
 
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "no auth header",
-			})
-			c.Abort()
-			return
+			unauthorized(c)
+			return 
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
@@ -49,45 +50,31 @@ func AuthMiddleware() gin.HandlerFunc {
 			tokenString,
 			jwksKeyfunc,
 		)
-
 		if err != nil {
-
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": err.Error(),
-			})
-			c.Abort()
-			return
+			unauthorized(c)
+			return 
 		}
 
 		if !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "token not valid",
-			})
-			c.Abort()
-			return
+			unauthorized(c)
+			return 
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid claims",
-			})
+			response.Unauthorized(c, "invalid access token")
 			c.Abort()
 			return
 		}
-
-
 
 		userID, ok := claims["sub"].(string)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "missing user id",
-			})
+			response.Unauthorized(c, "invalid access token")
 			c.Abort()
 			return
 		}
 
-		c.Set("user_id", userID)
+		c.Set(UserIDKey, userID)
 
 		c.Next()
 	}

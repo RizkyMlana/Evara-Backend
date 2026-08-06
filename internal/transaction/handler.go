@@ -1,8 +1,9 @@
 package transaction
 
 import (
-	"errors"
+	"evara-backend/pkg/apperror"
 	"evara-backend/pkg/response"
+	"evara-backend/pkg/validator"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,8 +27,9 @@ func (h *Handler) CreateTransaction(c *gin.Context) {
 
 	var req CreateTransactionRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := validator.Bind(c, &req); err != nil {
 		response.Validation(c, err.Error())
+		return
 	}
 
 	id, err := h.service.Create(
@@ -37,24 +39,13 @@ func (h *Handler) CreateTransaction(c *gin.Context) {
 	)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrInvalidAmount):
-			response.BadRequest(c, err.Error())
-		case errors.Is(err, ErrInvalidTransactionType):
-			response.BadRequest(c, err.Error())
-		case errors.Is(err, ErrNotFamilyMember):
-			response.Forbidden(c, err.Error())
-		default:
-			response.Internal(c, "internal server error")
-		}
+		apperror.Handle(c, err)
 		return
-		
-
 	}
 
 	response.Created(
 		c,
-		"Transaction created succesfully",
+		"Transaction created successfully",
 		CreateTransactionResponse{
 			ID: id,
 		},
@@ -81,24 +72,12 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 	)
 
 	if err != nil{
-		switch {
-		case errors.Is(err, ErrNotFamilyMember):
-			response.Forbidden(
-				c,
-				err.Error(),
-			)
-
-		default:
-			response.Internal(
-				c,
-				"Internal server error",
-			)
-		}
+		apperror.Handle(c, err)
 		return
 	}
 	response.OK(
 		c,
-		"Transaction retrieved succesfully",
+		"Transaction retrieved successfully",
 		transactions,
 	)
 
@@ -115,23 +94,7 @@ func (h *Handler) DeleteTransaction(c *gin.Context) {
 	)
 
 	if err != nil{
-		switch {
-		case errors.Is(err, ErrTransactionNotFound):
-			response.NotFound(
-				c,
-				err.Error(),
-			)
-		case errors.Is(err, ErrForbiddenDelete):
-			response.Forbidden(
-				c,
-				err.Error(),
-			)
-		default:
-			response.Internal(
-				c,
-				"Internal server error",
-			)
-		}
+		apperror.Handle(c, err)
 		return
 	}
 

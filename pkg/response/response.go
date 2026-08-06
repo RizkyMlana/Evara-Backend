@@ -27,11 +27,12 @@ func OK(
 	message string,
 	data any,
 ) {
-	JSON(c, http.StatusOK, Response{
-		Success: true,
-		Message: message,
-		Data:    data,
-	})
+	Success(
+		c, 
+		http.StatusOK,
+		message,
+		data,
+	)
 }
 
 func Created(
@@ -39,9 +40,45 @@ func Created(
 	message string,
 	data any,
 ) {
-	JSON(c, http.StatusCreated, Response{
+	Success(
+		c,
+		http.StatusCreated,
+		message,
+		data,
+	)
+}
+
+func Success(
+	c *gin.Context,
+	status int,
+	message string,
+	data any,
+) {
+	JSON(c, status, Response{
 		Success: true,
 		Message: message,
-		Data:    data,
+		Data: data,
 	})
+}
+
+func NoContent(c *gin.Context) {
+	c.Status(http.StatusNoContent)
+}
+
+func Paginated(
+	c *gin.Context,
+	message string,
+	data any,
+	pagination *Pagination,
+){
+	JSON(
+		c,
+		http.StatusOK,
+		Response{
+			Success: true,
+			Message: message,
+			Data: data,
+			Pagination: pagination,
+		},
+	)
 }

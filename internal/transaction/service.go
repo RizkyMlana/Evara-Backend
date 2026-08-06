@@ -2,14 +2,17 @@ package transaction
 
 import (
 	"context"
+	"errors"
+	"evara-backend/pkg/apperror"
+	"fmt"
+	"time"
 )
 
 type Service struct {
-	repository *Repository
+	repository Repository
 }
-
 func NewService(
-	repository *Repository,
+	repository Repository,
 ) *Service {
 
 	return &Service{
@@ -23,25 +26,37 @@ func (s *Service) Create(
 	req CreateTransactionRequest,
 ) (string, error) {
 
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
+
 	if req.Amount <= 0 {
-		return "", ErrInvalidAmount
+		return "", apperror.BadRequest(
+			"amount must be greater than zero",
+		)
 	}
 
 	if req.Type != "income" &&
 		req.Type != "expense" {
-			return "", ErrInvalidTransactionType
+			return "", apperror.BadRequest(
+				"invalid transaction type",
+			)
 	}
 
-	isMember, err := s.repository.isFamilyMember(
+	isMember, err := s.repository.IsFamilyMember(
 		ctx,
 		req.FamilyID,
 		userID,
 	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("check family member: %w", err)
 	}
 	if !isMember {
-		return "", ErrNotFamilyMember
+		return "", apperror.Forbidden(
+			"you are not a member of this family",
+		)
 	}
 
 
@@ -55,10 +70,14 @@ func (s *Service) Create(
 		Amount: req.Amount,
 	}
 
-	return s.repository.Create(
-		ctx,
+	id, err := s.repository.Create(
+		ctx, 
 		tx,
 	)
+	if err != nil {
+		return "", fmt.Errorf("create transaction: %w", err)
+	}
+	return id, nil
 }
 
 func (s *Service) GetTransactions(
@@ -66,23 +85,37 @@ func (s *Service) GetTransactions(
 	userID string,
 	familyID string,
 ) ([]GetTransactionsResponse, error) {
-	isMember, err := s.repository.isFamilyMember(
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
+	isMember, err := s.repository.IsFamilyMember(
 		ctx,
 		familyID,
 		userID,
 	)
 	if err != nil {
-		return  nil, err
+		return  nil, fmt.Errorf("check family member: %w", err)
 	}
 
 	if !isMember {
-		return  nil, ErrNotFamilyMember
+		return  nil, apperror.Forbidden(
+			"you are not a member of this family",
+		)
 	}
 
-	return s.repository.GetTransactions(
+	transactions, err := s.repository.GetTransactions(
 		ctx,
 		familyID,
 	)
+
+	if err != nil{
+		return nil, fmt.Errorf("get transactions: %w", err)
+	}
+
+	return  transactions, nil
 }
 
 func (s *Service) Delete(
@@ -90,21 +123,37 @@ func (s *Service) Delete(
 	userID string,
 	transactionID string,
 ) error {
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
+	
 	tx, err := s.repository.GetByID(
 		ctx,
 		transactionID,
 	)
+	
 	if err != nil {
-		return  err
+		if errors.Is(err, ErrTransactionNotFound) {
+			return apperror.NotFound("transaction not found")
+		}
 	}
 
 	if tx.UserID != userID {
-		return ErrForbiddenDelete
+		return apperror.Forbidden(
+			"you can only delete your own transaction",
+		)
 	}
 
-	return s.repository.Delete(
+	err = s.repository.Delete(
 		ctx,
 		transactionID,
 	)
+	if err != nil {
+		return fmt.Errorf("delete transaction: %w", err)
+	}
+	return nil
 
 }

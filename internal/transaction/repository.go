@@ -3,25 +3,64 @@ package transaction
 import (
 	"context"
 	"errors"
-	"evara-backend/internal/config"
+	"evara-backend/internal/database"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
 
-type Repository struct{}
 
-func NewRepository() *Repository {
-	return &Repository{}
+type Repository interface {
+	Create(
+		ctx context.Context,
+		tx Transaction,
+	) (string, error)
+
+	IsFamilyMember(
+		ctx context.Context,
+		familyID string,
+		userID string,
+	) (bool, error)
+
+	GetTransactions(
+		ctx context.Context,
+		familyID string,
+	) ([]GetTransactionsResponse, error)
+
+	GetByID(
+		ctx context.Context,
+		id string,
+	) (*Transaction, error)
+
+	Delete(
+		ctx context.Context,
+		id string,
+	) error
 }
 
-func (r *Repository) Create(
+type repository struct{
+	db database.DBTX
+}
+
+func NewRepository(
+	db database.DBTX,
+) Repository {
+	
+	return &repository{
+		db: db,
+	}
+}
+
+func (r *repository) Create(
 	ctx context.Context,
 	tx Transaction,
 ) (string, error) {
-
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var id string
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 		insert into transactions (
@@ -44,19 +83,21 @@ func (r *Repository) Create(
 	).Scan(&id)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("create transaction: %w", err)
 	}
 
 	return id, nil
 }
 
-func (r *Repository) isFamilyMember(
+func (r *repository) IsFamilyMember(
 	ctx context.Context,
 	familyID string,
 	userID string,
 ) (bool,error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var exists bool
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`select exists (
 			select 1
@@ -69,22 +110,24 @@ func (r *Repository) isFamilyMember(
 	).Scan(&exists)
 
 	if err != nil {
-		return  false, err
+		return  false, fmt.Errorf("check family member: %w", err)
 	}
 
 	return  exists, nil
 }
 
-func (r *Repository) GetTransactions(
+func (r *repository) GetTransactions(
 	ctx context.Context,
 	familyID string,
 ) ([]GetTransactionsResponse, error) {
-	rows, err := config.DB.Query(
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	rows, err := r.db.Query(
 		ctx,
 		`
 			select
 				t.id,
-				COALESCE(p.name, '')
+				COALESCE(p.name, ''),
 				t.type,
 				t.title,
 				t.description,
@@ -99,7 +142,7 @@ func (r *Repository) GetTransactions(
 	)
 
 	if err != nil {
-		return  nil, err
+		return  nil, fmt.Errorf("query transactions: %w", err)
 	}
 
 	defer rows.Close()
@@ -120,21 +163,27 @@ func (r *Repository) GetTransactions(
 		)
 
 		if err != nil {
-			return  nil, err
+			return  nil, fmt.Errorf("scan transaction: %w", err)
 		}
 
 		transactions = append(transactions, tx)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate transactions: %w", err)
+	}
+
 	return transactions, nil
 }
 
-func (r *Repository) GetByID(
+func (r *repository) GetByID(
 	ctx context.Context,
 	id string,
 ) (*Transaction, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var tx Transaction
 
-	err := config.DB.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		`
 		select id, family_id, user_id, type, title, description, amount, created_at
@@ -156,16 +205,19 @@ func (r *Repository) GetByID(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return  nil, ErrTransactionNotFound
 		}
+		return nil, fmt.Errorf("get transaction by id: %w", err)
 	}
 
 	return  &tx, nil
 }
 
-func (r *Repository) Delete(
+func (r *repository) Delete(
 	ctx context.Context,
 	id string,
 ) error {
-	_, err := config.DB.Exec(
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	_, err := r.db.Exec(
 		ctx,
 		`
 			delete from transactions
@@ -173,5 +225,9 @@ func (r *Repository) Delete(
 		`,
 		id,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("delete transaction: %w", err)
+	}
+
+	return nil
 }
