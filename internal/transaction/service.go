@@ -5,12 +5,12 @@ import (
 	"errors"
 	"evara-backend/pkg/apperror"
 	"fmt"
+	"time"
 )
 
 type Service struct {
 	repository Repository
 }
-
 func NewService(
 	repository Repository,
 ) *Service {
@@ -25,6 +25,12 @@ func (s *Service) Create(
 	userID string,
 	req CreateTransactionRequest,
 ) (string, error) {
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
 
 	if req.Amount <= 0 {
 		return "", apperror.BadRequest(
@@ -79,6 +85,12 @@ func (s *Service) GetTransactions(
 	userID string,
 	familyID string,
 ) ([]GetTransactionsResponse, error) {
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
 	isMember, err := s.repository.IsFamilyMember(
 		ctx,
 		familyID,
@@ -111,6 +123,13 @@ func (s *Service) Delete(
 	userID string,
 	transactionID string,
 ) error {
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
+	
 	tx, err := s.repository.GetByID(
 		ctx,
 		transactionID,

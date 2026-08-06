@@ -2,11 +2,15 @@ package app
 
 import (
 	"evara-backend/internal/config"
+	"evara-backend/internal/database"
 	"evara-backend/internal/middleware"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
 	server *Server
+	db *pgxpool.Pool
 }
 
 func New() (*App, error) {
@@ -19,7 +23,7 @@ func New() (*App, error) {
 		return nil, err
 	}
 	
-	db, err := config.NewDatabase(cfg.Database)
+	db, err := database.NewDatabase(cfg.Database)
 	
 	if err != nil {
 		return nil, err
@@ -33,9 +37,13 @@ func New() (*App, error) {
 
 	return &App{
 		server: server,
+		db: db,
 	}, nil
 }
 
 func (a *App) Run() error {
 	return a.server.Run()
+}
+func (a *App) Close() {
+	a.db.Close()
 }

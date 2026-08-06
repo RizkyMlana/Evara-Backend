@@ -2,6 +2,9 @@ package family
 
 import (
 	"context"
+	"evara-backend/internal/database"
+	"evara-backend/pkg/apperror"
+	"time"
 )
 
 type Service interface {
@@ -47,11 +50,16 @@ type Service interface {
 
 type service struct {
 	repository Repository
+	txManager *database.TransactionManager
 }
 
-func NewService(repository Repository) Service {
+func NewService(
+	repository Repository, 
+	txManager *database.TransactionManager,
+	) Service {
 	return &service{
 		repository: repository,
+		txManager: txManager,
 	}
 }
 
@@ -61,24 +69,40 @@ func (s *service) Create(
 	req CreateFamilyRequest,
 ) (string, error) {
 
-	familyID, err := s.repository.Create(
+	ctx, cancel := context.WithTimeout(
 		ctx,
-		userID,
-		req.Name,
+		5*time.Second,
+	)
+	defer cancel()
+	var familyID string
+
+	err := s.txManager.WithinTransaction(
+		ctx,
+		func (tx database.DBTX) error {
+			repo := NewRepository(tx)
+
+			id, err := repo.Create(
+				ctx,
+				userID,
+				req.Name,
+			)
+			if err != nil {
+				return err
+			}
+			if err := repo.AddOwner(
+				ctx,
+				id,
+				userID,
+			); err != nil {
+				return err
+			}
+			familyID = id
+			return nil
+		},
 	)
 	if err != nil {
 		return "", err
 	}
-
-	err = s.repository.AddOwner(
-		ctx,
-		familyID,
-		userID,
-	)
-	if err != nil {
-		return "", err
-	}
-
 	return familyID, nil
 }
 
@@ -86,6 +110,13 @@ func (s *service) GetMyFamily(
 	ctx context.Context,
 	userID string,
 ) (*GetMyFamilyResponse, error) {
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
+
 	return s.repository.GetMyFamily(
 		ctx,
 		userID,
@@ -96,6 +127,12 @@ func (s *service)GetMembers(
 	ctx context.Context,
 	familyID string,
 )([]FamilyMemberResponse, error){
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
 	return s.repository.GetMembers(
 		ctx,
 		familyID,
@@ -107,7 +144,13 @@ func(s *service)Invite(
 	userID string,
 	familyID string,
 	req InviteMemberRequest,
-) error {
+	) error {
+
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
 	role, err := s.repository.GetRole(
 		ctx,
 		familyID,
@@ -119,7 +162,9 @@ func(s *service)Invite(
 	}
 
 	if role != "owner" {
-		return ErrOnlyOwnerCanInvite
+		return apperror.Forbidden(
+			"only owner can invite member",
+		)
 	}
 
 	exists, err := s.repository.InvitationExists(
@@ -133,7 +178,9 @@ func(s *service)Invite(
 	}
 
 	if exists {
-		return ErrorAlreadyInvited
+		return apperror.Conflict(
+			"user already invited",
+		)
 	}
 
 	return s.repository.CreateInvitation(
@@ -149,6 +196,11 @@ func (s *service) GetInvitations(
 	ctx context.Context,
 	userID string,
 )([]InvitationResponse, error) {
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
 	return s.repository.GetInvitations(
 		ctx,
 		userID,
@@ -159,40 +211,62 @@ func (s *service) AcceptInvitation(
 	userID string,
 	invitationID string,
 ) error {
-	invitation, err := s.repository.GetInvitation(
+	ctx, cancel := context.WithTimeout(
 		ctx,
-		invitationID,
+		5*time.Second,
+	)
+	defer cancel()
+	return s.txManager.WithinTransaction(
+		ctx,
+		func(tx database.DBTX) error {
+			repo := NewRepository(tx)
+
+			invitation, err := repo.GetInvitation(
+				ctx,
+				invitationID,
+			)
+
+			if err != nil {
+				return err
+			}
+			if invitation.Status != "pending" {
+				return apperror.BadRequest(
+					"invitation already processed",
+				)
+			}
+
+			err = repo.AddMember(
+				ctx,
+				invitation.FamilyID,
+				userID,
+			)
+
+			if err != nil {
+				return err
+			}
+			err = repo.UpdateInvitationStatus(
+				ctx,
+				invitationID,
+				"accepted",
+			)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 	)
 
-	if err != nil {
-		return err
-	}
-
-	if invitation.Status != "pending" {
-		return ErrInvitationProcessed
-	}
-
-	err = s.repository.AddMember(
-		ctx,
-		invitation.FamilyID,
-		userID,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	return s.repository.UpdateInvitationStatus(
-		ctx,
-		invitationID,
-		"accepted",
-	)
 }
 
 func (s *service)RejectInvitation(
 	ctx context.Context,
 	invitationID string,
 ) error {
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
 	return s.repository.RejectInvitation(
 		ctx,
 		invitationID,

@@ -1,17 +1,50 @@
 package user
 
+import (
+	"context"
+	"time"
+)
+
 type Service interface {
-	Me(userID string) *MeResponse
+	Me(
+		ctx context.Context,
+		userID string,
+		) (*MeResponse, error)
 }
 
-type service struct {}
-
-func NewService () Service {
-	return &service{}
+type service struct {
+	repository Repository
 }
 
-func (s *service) Me(userID string) *MeResponse {
-	return &MeResponse{
-		UserID: userID,
+func NewService (
+	repository Repository,
+) Service {
+	return &service{
+		repository: repository,
 	}
+}
+
+func (s *service) Me(
+	ctx context.Context,
+	userID string,
+) (*MeResponse, error) {
+	ctx, cancel := context.WithTimeout(
+		ctx,
+		5*time.Second,
+	)
+	defer cancel()
+	user, err := s.repository.GetByID(
+		ctx,
+		userID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &MeResponse{
+		UserID: user.ID,
+		Name: user.Name,
+		Email: user.Email,
+	}, nil
 }

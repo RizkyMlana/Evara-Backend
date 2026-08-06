@@ -1,12 +1,13 @@
-package config
+package database
 
 import (
 	"context"
+	"evara-backend/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewDatabase(cfg DatabaseConfig) (*pgxpool.Pool, error) {
+func NewDatabase(cfg config.DatabaseConfig) (*pgxpool.Pool, error) {
 	db, err := pgxpool.New(
 		context.Background(),
 		cfg.URL,

@@ -14,9 +14,17 @@ func NewRouter(
 	r.SetTrustedProxies(
 		[]string{"192.168.1.2"},
 	)
-
+	r.Use(
+		middleware.RequestID(),
+	)
+	r.Use(
+		middleware.Logging(),
+	)
+	r.Use(
+		middleware.Recovery(),
+	)
 	api := r.Group("/api")
-
+	
 	api.Use(
 		middleware.AuthMiddleware(),
 	)

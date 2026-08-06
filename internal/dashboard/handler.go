@@ -1,7 +1,7 @@
 package dashboard
 
 import (
-	"errors"
+	"evara-backend/pkg/apperror"
 	"evara-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -35,13 +35,7 @@ func (h *Handler)GetDashboard(c *gin.Context) {
 	)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrNotFamilyMember):
-			response.Forbidden(c, err.Error())
-
-		default:
-			response.Internal(c, err.Error())
-		}
+		apperror.Handle(c, err)
 		return
 	}
 	response.OK(

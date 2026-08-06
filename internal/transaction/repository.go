@@ -3,11 +3,11 @@ package transaction
 import (
 	"context"
 	"errors"
+	"evara-backend/internal/database"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 
@@ -40,11 +40,11 @@ type Repository interface {
 }
 
 type repository struct{
-	db *pgxpool.Pool
+	db database.DBTX
 }
 
 func NewRepository(
-	db *pgxpool.Pool,
+	db database.DBTX,
 ) Repository {
 	
 	return &repository{

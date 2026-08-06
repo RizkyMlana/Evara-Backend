@@ -2,8 +2,11 @@ package family
 
 import (
 	"context"
+	"errors"
+	"evara-backend/internal/database"
+	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 type Repository interface {
@@ -78,11 +81,11 @@ type Repository interface {
 }
 
 type repository struct{
-	db *pgxpool.Pool
+	db database.DBTX
 }
 
 func NewRepository(
-	db *pgxpool.Pool,
+	db database.DBTX,
 ) Repository {
 	return &repository{
 		db: db,
@@ -109,7 +112,7 @@ func (r *repository) Create(
 	).Scan(&familyID)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("create family: %w", err)
 	}
 
 	return familyID, nil
@@ -134,8 +137,10 @@ func (r *repository) AddOwner(
 		familyID,
 		userID,
 	)
-
-	return err
+	if err != nil {
+		return fmt.Errorf("add family owner: %w", err)
+	}
+	return nil
 }
 
 func (r *repository) GetMyFamily(
@@ -159,9 +164,11 @@ func (r *repository) GetMyFamily(
 		&family.Name,
 		&family.Role,
 	)
-
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrFamilyNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get my family: %w", err)
 	}
 
 	return &family, nil
@@ -182,7 +189,7 @@ func (r *repository) GetMembers(
 		familyID,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get family members: %w", err)
 	}
 
 	defer rows.Close()
@@ -199,13 +206,13 @@ func (r *repository) GetMembers(
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan family member: %w", err)
 		}
 		members = append(members, member)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("iterate family members: %w", err)
 	}
 
 	return members, nil
@@ -232,7 +239,7 @@ func (r *repository)GetRole(
 	).Scan(&role)
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("get member role: %w", err)
 	}
 
 	return role, nil
@@ -259,8 +266,11 @@ func (r * repository) InvitationExists(
 		familyID,
 		email,
 	).Scan(&exists)
-
-	return exists, err
+	
+	if err != nil {
+		return false, fmt.Errorf("check invitation exists: %w", err)
+	}
+	return exists, nil
 }
 
 func (r *repository) CreateInvitation(
@@ -283,7 +293,10 @@ func (r *repository) CreateInvitation(
 		email,
 		userID,
 	)
-	return  err
+	if err != nil {
+		return fmt.Errorf("create invitation: %w", err)
+	}
+	return  nil
 }
 
 func (r *repository)GetInvitations(
@@ -303,7 +316,7 @@ func (r *repository)GetInvitations(
 		userID,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get invitations: %w", err)
 	}
 
 	defer rows.Close()
@@ -321,13 +334,13 @@ func (r *repository)GetInvitations(
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan invitation: %w", err)
 		}
 
 		invitations = append(invitations, invitation)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("iterate invitations: %w", err)
 	}
 
 	return invitations, nil
@@ -354,9 +367,12 @@ func (r *repository)GetInvitation(
 		&invitation.InvitedBy,
 		&invitation.Status,
 	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrInvitationNotFound
+	}
 
 	if err != nil {
-		return nil, ErrInvitationNotFound
+		return nil, fmt.Errorf("get invitation: %w", err)
 	}
 
 	return &invitation, nil
@@ -376,7 +392,10 @@ func (r *repository) AddMember (
 		familyID,
 		userID,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("add family member: %w", err)
+	}
+	return nil
 }
 
 func (r *repository) UpdateInvitationStatus(
@@ -394,7 +413,11 @@ func (r *repository) UpdateInvitationStatus(
 		id,
 		status,
 	)
-	return err
+
+	if err != nil {
+		return fmt.Errorf("update invitation status: %w", err)
+	}
+	return nil
 }
 
 func (r *repository)RejectInvitation(
@@ -412,5 +435,8 @@ func (r *repository)RejectInvitation(
 		`,
 		id,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("reject invitation: %w", err)
+	}
+	return nil
 }

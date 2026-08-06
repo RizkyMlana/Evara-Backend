@@ -1,8 +1,7 @@
 package family
 
 import (
-	"errors"
-
+	"evara-backend/pkg/apperror"
 	"evara-backend/pkg/response"
 	"evara-backend/pkg/validator"
 
@@ -60,12 +59,7 @@ func (h *Handler) GetMyFamily(c *gin.Context) {
 	)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrFamilyNotFound):
-			response.NotFound(c, err.Error())
-		default:
-			response.Internal(c, "Internal server error")
-		}
+		apperror.Handle(c, err)
 		return
 	}
 
@@ -113,16 +107,7 @@ func (h *Handler)InviteMember(c *gin.Context) {
 	)
 
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrOnlyOwnerCanInvite):
-			response.Forbidden(c, err.Error())
-		case errors.Is(err, ErrorAlreadyInvited):
-			response.Conflict(c, err.Error())
-
-		default: 
-			response.Internal(c, "Internal server errror")
-		}
-
+		apperror.Handle(c, err)
 		return
 	}
 
@@ -163,11 +148,7 @@ func (h *Handler) AcceptInvitation(c *gin.Context) {
 		invitationID,
 	)
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrInvitationNotFound): response.NotFound(c, err.Error())
-		case errors.Is(err, ErrInvitationProcessed): response.BadRequest(c, err.Error())
-		default : response.Internal(c, "Internal server error")
-		}
+		apperror.Handle(c, err)
 		return
 	}
 

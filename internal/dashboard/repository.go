@@ -2,8 +2,8 @@ package dashboard
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgxpool"
+	"evara-backend/internal/database"
+	"fmt"
 )
 
 type Repository interface {
@@ -16,15 +16,15 @@ type Repository interface {
 	GetSummary(
 		ctx context.Context,
 		familyID string,
-	) (*DashboardResponse, error)
+	) (*Dashboard, error)
 }
 
 type repository struct {
-	db *pgxpool.Pool
+	db database.DBTX
 }
 
 func NewRepository(
-	db *pgxpool.Pool,
+	db database.DBTX,
 ) Repository { 
 	return &repository{
 		db: db,
@@ -51,14 +51,18 @@ func (r *repository) IsFamilyMember(
 		userID,
 	).Scan(&exists)
 
-	return exists, err
+	if err != nil {
+		return false, fmt.Errorf("check family member: %w", err)
+	}
+
+	return exists, nil
 }
 
 func (r *repository)GetSummary(
 	ctx context.Context,
 	familyID string,
-) (*DashboardResponse, error) {
-	var res DashboardResponse
+) (*Dashboard, error) {
+	var dashboard Dashboard
 
 	err := r.db.QueryRow(
 		ctx,
@@ -75,14 +79,13 @@ func (r *repository)GetSummary(
 		`,
 		familyID,
 	).Scan(
-		&res.TotalIncome,
-		&res.TotalExpense,
+		&dashboard.TotalIncome,
+		&dashboard.TotalExpense,
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get dashboard summary: %w", err)
 	}
-	res.Balance = res.TotalIncome - res.TotalExpense
 
-	return &res, nil
+	return &dashboard, nil
 }

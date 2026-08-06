@@ -2,6 +2,7 @@ package app
 
 import (
 	"evara-backend/internal/dashboard"
+	"evara-backend/internal/database"
 	"evara-backend/internal/family"
 	"evara-backend/internal/transaction"
 	"evara-backend/internal/user"
@@ -27,26 +28,22 @@ func NewProviders(
 	db *pgxpool.Pool,
 ) *Providers {
 
+	txManager := database.NewTransactionManager(db)
+
 	// Transaction
 
 	transactionRepo := transaction.NewRepository(db)
-	transactionService := transaction.NewService(
-		transactionRepo,
-	)
-	transactionHandler := transaction.NewHandler(
-		transactionService,
-	)
+	transactionService := transaction.NewService(transactionRepo,)
+	transactionHandler := transaction.NewHandler(transactionService,)
 	// Family
 
 	familyRepo := family.NewRepository(db)
-
-	familyService := family.NewService(familyRepo)
-
+	familyService := family.NewService(familyRepo, txManager)
 	familyHandler := family.NewHandler(familyService)
 
 	// User
-
-	userService := user.NewService()
+	userRepo := user.NewRepository(db)
+	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService)
 
 	// Dashboard

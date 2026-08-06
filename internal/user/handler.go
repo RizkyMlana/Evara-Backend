@@ -1,6 +1,7 @@
 package user
 
 import (
+	"evara-backend/pkg/apperror"
 	"evara-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -21,10 +22,19 @@ func NewHandler(
 func (h *Handler) Me(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 
-	data := h.service.Me(userID)
+	data, err := h.service.Me(
+		c.Request.Context(),
+		userID,
+	)
+
+	if err != nil {
+		apperror.Handle(c, err)
+		return
+	}
+
 	response.OK(
 		c,
-		"success",
+		"profiles retrieved successfully",
 		data,
 	)
 }

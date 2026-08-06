@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"evara-backend/internal/config"
 	"evara-backend/pkg/logger"
@@ -50,3 +51,10 @@ func (s *Server) Run() error {
 	return nil
 }
 
+func (s *Server) Shutdown(ctx context.Context) error {
+	logger.Log.Info(
+		"shutting down HTTP server",
+	)
+
+	return s.http.Shutdown(ctx)
+}
