@@ -21,6 +21,19 @@ func NewHandler(
 	}
 }
 
+
+// CreateFamily godoc
+// 
+// @Summary Create family
+// @Description Create a new family
+// @Tags Family
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body CreateFamilyRequest true "Create Family"
+// @Success 201 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Router /families [post]
 func (h *Handler) CreateFamily(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 

@@ -1,0 +1,72 @@
+basePath: /api/v1
+definitions:
+  family.CreateFamilyRequest:
+    properties:
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  response.ErrorDetail:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  response.Pagination:
+    properties:
+      has_more:
+        type: boolean
+      next_cursor:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorDetail'
+      message:
+        type: string
+      pagination:
+        $ref: '#/definitions/response.Pagination'
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: Family Expense Tracker API
+  title: Evara API
+  version: "1.0"
+paths:
+  /families:
+    post:
+      consumes:
+      - application/json
+      description: Create a new family
+      parameters:
+      - description: Create Family
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/family.CreateFamilyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create family
+      tags:
+      - Family
+swagger: "2.0"

@@ -1,3 +1,7 @@
+// @title Evara API
+// @version 1.0
+// @description Family Expense Tracker API
+// @BasePath /api/v1
 package main
 
 import (
