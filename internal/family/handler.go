@@ -23,7 +23,6 @@ func NewHandler(
 
 
 // CreateFamily godoc
-// 
 // @Summary Create family
 // @Description Create a new family
 // @Tags Family
@@ -64,6 +63,17 @@ func (h *Handler) CreateFamily(c *gin.Context) {
 	)
 }
 
+// GetMyFamily godoc
+// @Summary Get my family
+// @Description Get the authenticated user's family information
+// @Tags Family
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=GetMyFamilyResponse}
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /families/me [get]
 func (h *Handler) GetMyFamily(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	family, err := h.service.GetMyFamily(
@@ -83,6 +93,18 @@ func (h *Handler) GetMyFamily(c *gin.Context) {
 	)
 }
 
+// GetFamilyMembers godoc
+// @Summary Get family members
+// @Description Get all members of a family
+// @Tags Family
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Family ID"
+// @Success 200 {object} response.Response{data=[]FamilyMemberResponse}
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /families/{id}/members [get]
 func(h *Handler) GetFamilyMember(c *gin.Context) {
 	familyID := c.Param("id")
 	members, err := h.service.GetMembers(
@@ -101,6 +123,22 @@ func(h *Handler) GetFamilyMember(c *gin.Context) {
 	)
 }
 
+// InviteMember godoc
+// @Summary Invite family member
+// @Description Invite a user to join a family by email
+// @Tags Family
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Family ID"
+// @Param request body InviteMemberRequest true "Invitation request"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 403 {object} response.Response
+// @Failure 409 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /families/{id}/invite [post]
 func (h *Handler)InviteMember(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	familyID := c.Param("id")
@@ -131,6 +169,16 @@ func (h *Handler)InviteMember(c *gin.Context) {
 	)
 }
 
+// GetInvitations godoc
+// @Summary Get invitations
+// @Description Get all pending family invitations for the authenticated user
+// @Tags Family
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=[]InvitationResponse}
+// @Failure 401 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /families/invitations [get]
 func (h *Handler)GetInvitations(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 
@@ -151,6 +199,19 @@ func (h *Handler)GetInvitations(c *gin.Context) {
 	)
 }
 
+// AcceptInvitation godoc
+// @Summary Accept invitation
+// @Description Accept a pending family invitation
+// @Tags Family
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Invitation ID"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /families/invitations/{id}/accept [patch]
 func (h *Handler) AcceptInvitation(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	invitationID := c.Param("id")
@@ -172,6 +233,19 @@ func (h *Handler) AcceptInvitation(c *gin.Context) {
 	)
 }
 
+// RejectInvitation godoc
+// @Summary Reject invitation
+// @Description Reject a pending family invitation
+// @Tags Family
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Invitation ID"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /families/invitations/{id}/reject [patch]
 func (h *Handler) RejectInvitation(c *gin.Context) {
 	invitationID := c.Param("id")
 
@@ -181,7 +255,7 @@ func (h *Handler) RejectInvitation(c *gin.Context) {
 	)
 
 	if err != nil {
-		response.Internal(c, "Internal server error")
+		apperror.Handle(c, err)
 		return
 	}
 

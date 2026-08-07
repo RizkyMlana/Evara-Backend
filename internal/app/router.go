@@ -9,7 +9,7 @@ import (
 func NewRouter(
 	p *Providers,
 ) *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
 
 	r.SetTrustedProxies(
 		[]string{"192.168.1.2"},
@@ -23,12 +23,23 @@ func NewRouter(
 	r.Use(
 		middleware.Recovery(),
 	)
+	r.StaticFile(
+		"/swagger.json",
+		"./docs/swagger.json",
+	)
+	r.StaticFile(
+		"/docs",
+		"./internal/docs/scalar.html",
+	)
+	
 	api := r.Group("/api")
 	
 	api.Use(
 		middleware.AuthMiddleware(),
 	)
 
+
+	
 
 	api.GET(
 		"/me",
@@ -57,13 +68,13 @@ func NewRouter(
 		p.FamilyHandler.GetInvitations,
 	)
 
-	api.POST(
+	api.PATCH(
 		"/invitations/:id/accept",
 		p.FamilyHandler.AcceptInvitation,
 	)
 
-	api.POST(
-		"invitations/:id/reject",
+	api.PATCH(
+		"/invitations/:id/reject",
 		p.FamilyHandler.RejectInvitation,
 	)
 

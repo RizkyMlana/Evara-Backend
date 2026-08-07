@@ -1,7 +1,11 @@
 // @title Evara API
 // @version 1.0
 // @description Family Expense Tracker API
-// @BasePath /api/v1
+// @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 package main
 
 import (

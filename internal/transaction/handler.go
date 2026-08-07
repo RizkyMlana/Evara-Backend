@@ -21,6 +21,20 @@ func NewHandler(
 	}
 }
 
+
+// CreateTransaction godoc
+// @Summary Create transaction
+// @Description Create a new income or expense transaction
+// @Tags Transaction
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body CreateTransactionRequest true "Transaction data"
+// @Success 201 {object} response.Response{data=CreateTransactionResponse}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /transaction [post]
 func (h *Handler) CreateTransaction(c *gin.Context) {
 
 	userID := c.MustGet("user_id").(string)
@@ -52,7 +66,19 @@ func (h *Handler) CreateTransaction(c *gin.Context) {
 	)
 }
 
-
+// GetTransactions godoc
+// @Summary Get transactions
+// @Description Get all transactions form a family
+// @Tags Transaction
+// @Produce json
+// @Security BearerAuth
+// @Param family_id query string true "Family ID"
+// @Success 200 {object} response.Response{data=[]GetTransactionsResponse}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 403 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /transaction [get]
 func (h *Handler) GetTransactions(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	familyID := c.Query("family_id")
@@ -83,6 +109,19 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 
 }
 
+// DeleteTransaction godoc
+// @Summary Delete transaction
+// @Description Delete a transaction by its ID
+// @Tags Transaction
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 403 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /transaction/{id} [delete]
 func (h *Handler) DeleteTransaction(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	transactionID := c.Param("id")

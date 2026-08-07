@@ -19,6 +19,18 @@ func NewHandler(
 	}
 }
 
+
+// Me godoc
+// @Summary Get my profile
+// @Description Get the authenticated user's profile information
+// @Tags User
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {objec} response.Response{data=MeResponse}
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /me [get]
 func (h *Handler) Me(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 

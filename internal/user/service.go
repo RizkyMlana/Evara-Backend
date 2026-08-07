@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -39,8 +40,10 @@ func (s *service) Me(
 	)
 
 	if err != nil {
+		fmt.Printf("GetByID error: %T %+v\n", err, err)
 		return nil, err
 	}
+	fmt.Printf("User: %+v\n", user)
 
 	return &MeResponse{
 		UserID: user.ID,
